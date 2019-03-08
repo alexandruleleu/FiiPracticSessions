@@ -1,0 +1,47 @@
+.app {
+    text-align: center;
+}
+
+.app-container {
+    background-color: #282c34;
+    min-height: 100vh;
+    display: flex;
+    font-size: calc(5px + 2vmin);
+    color: orange;
+
+    .app-content {
+        display: flex;
+        width: 50%;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        border-right: 1px solid #fff;
+        .ui.button {
+            margin: 10px 0;
+        }
+
+        .list-item {
+            margin: 15px;
+        }
+
+        .input-value {
+            margin-top: 10px;
+        }
+    }
+
+    .app-login-component {
+        width: 50%;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        flex-direction: column;
+
+        .ui.input {
+            margin: 10px 0;
+        }
+
+        .buttons-container {
+            display: flex;
+        }
+    }
+}
