@@ -17,27 +17,24 @@ export default class AuthService {
                     const { user } = rsp;
                     console.log(user);
 
-                    //register this account in firebase database
+                    //register this account in firebase database with a unique key received from auth service
                     let userId = user.uid;
                     this.createNewAccount({
                         userId,
                         signUpEmail
                     }).then(() => {
-                        const message =
-                            "Your account it was successfully registered";
-                        resolve({ message: message });
+                        resolve(rsp);
                     });
                 },
                 err => {
-                    console.log(err);
-                    const error = "Something went wrong...";
-                    reject({ message: error });
+                    reject(err);
                 }
             );
         });
     };
 
     createNewAccount = payload => {
+        //it inserts a new field in "users object" = check firebase "realtime database"
         return firebaseProvider
             .database()
             .ref("users")
@@ -47,14 +44,37 @@ export default class AuthService {
 
     //login service
     onLoginUser = (email, password) => {
-        // login method (firebase)
+        return this.auth.signInWithEmailAndPassword(email, password).then(
+            rsp => {
+                console.log(rsp);
+            },
+            err => {
+                throw err;
+            }
+        );
     };
 
     onLogoutUser = () => {
         // logout method (firebase)
+        return this.auth.signOut();
     };
 
     checkIfLoggedIn = () => {
-        // onAuthStateChanges - it checks if a specific user logged in
+        /*  onAuthStateChanges 
+            It checks if a specific user logged in;
+            It contains a callback which is fired for every change;
+        */
+        return new Promise((resolve, reject) => {
+            this.auth.onAuthStateChanged(firebaseUser => {
+                // if we receive a non-null object => user is still logged in
+                if (firebaseUser) {
+                    console.log(firebaseUser);
+                    resolve(true);
+                } else {
+                    console.log("not logged in!!!");
+                    resolve(false);
+                }
+            });
+        });
     };
 }

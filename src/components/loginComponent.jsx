@@ -13,18 +13,24 @@ export default class LoginComponent extends Component {
                 password: ""
             },
             logged: false,
+            //booleans for displaying the errors
             signUpSuccessMsg: false,
             signUpErrorMsg: false,
-            successMsg: "",
-            errorMsg: ""
+            successMsg: "Your account it was successfully registered",
+            errorMsg: "Something went wrong..."
         };
 
         this.authService = new AuthService();
-        //console.log(this);
     }
 
     componentDidMount() {
+        //this method is automatically fired after "render()" method
         //check if user logged in
+        this.authService.checkIfLoggedIn().then(rsp => {
+            this.setState({
+                logged: rsp
+            });
+        });
     }
 
     handleInputChange = ev => {
@@ -40,20 +46,19 @@ export default class LoginComponent extends Component {
 
     handleOnClickSignUp = () => {
         const { email, password } = this.state.formState;
+        //here we can insert input validations (for email format and so on)
         if (email !== "" && password !== "") {
             this.authService.onSignUpUser(email, password).then(
                 rsp => {
                     this.setState({
                         signUpSuccessMsg: true,
-                        signUpErrorMsg: false,
-                        successMsg: rsp.message
+                        signUpErrorMsg: false
                     });
                 },
                 err => {
                     this.setState({
                         signUpSuccessMsg: false,
-                        signUpErrorMsg: true,
-                        errorMsg: err.message
+                        signUpErrorMsg: true
                     });
                 }
             );
