@@ -1,11 +1,9 @@
 import React from "react";
-import ReactDOM from "react-dom";
+import { render } from "react-dom";
+import App from "./main/app";
 
-//styles
 import "./assets/less/index.css";
-import "semantic-ui-css/semantic.min.css";
 
-//root component
-import App from "./App";
+const target = document.getElementById("root");
 
-ReactDOM.render(<App />, document.getElementById("root"));
+render(<App />, target);

@@ -1,80 +1,112 @@
 import firebaseProvider from "../config/FireConfig";
 
 export default class AuthService {
-    constructor() {
-        this.auth = firebaseProvider.auth();
-    }
+  //registration service
+  onSignUpUser = (firstName, lastName, signUpEmail, signUpPassword) => {
+    return new Promise((resolve, reject) => {
+      const auth = firebaseProvider.auth();
+      const promise = auth.createUserWithEmailAndPassword(
+        signUpEmail,
+        signUpPassword
+      );
+      promise.then(
+        rsp => {
+          //register this account in database
+          const { user } = rsp;
+          let userId = user.uid;
 
-    //registration service from firebase
-    onSignUpUser = (signUpEmail, signUpPassword) => {
-        return new Promise((resolve, reject) => {
-            const promise = this.auth.createUserWithEmailAndPassword(
-                signUpEmail,
-                signUpPassword
-            );
-            promise.then(
-                rsp => {
-                    const { user } = rsp;
-                    console.log(user);
+          this.createNewAccount({
+            userId,
+            firstName,
+            lastName,
+            signUpEmail
+          }).then(() => {
+            const message = "Your account it was successfully registered";
+            resolve({ message: message });
+          });
+        },
+        err => {
+          console.log(err);
+          const error = "Something went wrong...";
+          reject({ message: error });
+        }
+      );
+    });
+  };
 
-                    //register this account in firebase database with a unique key received from auth service
-                    let userId = user.uid;
-                    this.createNewAccount({
-                        userId,
-                        signUpEmail
-                    }).then(() => {
-                        resolve(rsp);
-                    });
-                },
-                err => {
-                    reject(err);
-                }
-            );
-        });
+  createNewAccount = payload => {
+    const defaults = {
+      firstName: payload.firstName,
+      lastName: payload.lastName,
+      email: payload.signUpEmail
     };
+    return firebaseProvider
+      .database()
+      .ref("users")
+      .child(payload.userId)
+      .update({ ...defaults });
+  };
 
-    createNewAccount = payload => {
-        //it inserts a new field in "users object" = check firebase "realtime database"
-        return firebaseProvider
-            .database()
-            .ref("users")
-            .child(payload.userId)
-            .update({ email: payload.signUpEmail });
-    };
+  //login service
+  onSignInUser = (email, password) => {
+    return new Promise((resolve, reject) => {
+      const auth = firebaseProvider.auth();
+      const promise = auth.signInWithEmailAndPassword(email, password);
+      promise.then(
+        rsp => {
+          const { user } = rsp;
+          let userId = user.uid;
+          this.getUserInfo(userId).then(rsp => {
+            const response = rsp.val();
+            response["userId"] = userId;
+            resolve(response);
+          });
+        },
+        err => {
+          console.log(err);
+          const error = "Email or password is wrong!";
+          reject({ message: error });
+        }
+      );
+    });
+  };
 
-    //login service
-    onLoginUser = (email, password) => {
-        return this.auth.signInWithEmailAndPassword(email, password).then(
-            rsp => {
-                console.log(rsp);
-            },
-            err => {
-                throw err;
-            }
-        );
-    };
-
-    onLogoutUser = () => {
-        // logout method (firebase)
-        return this.auth.signOut();
-    };
-
-    checkIfLoggedIn = () => {
-        /*  onAuthStateChanges 
-            It checks if a specific user logged in;
-            It contains a callback which is fired for every change;
-        */
-        return new Promise((resolve, reject) => {
-            this.auth.onAuthStateChanged(firebaseUser => {
-                // if we receive a non-null object => user is still logged in
-                if (firebaseUser) {
-                    console.log(firebaseUser);
-                    resolve(true);
-                } else {
-                    console.log("not logged in!!!");
-                    resolve(false);
-                }
+  checkIfLoggedIn = () => {
+    return new Promise((resolve, reject) => {
+      const auth = firebaseProvider.auth();
+      auth.onAuthStateChanged(firebaseUser => {
+        if (firebaseUser != null) {
+          this.getUserInfo(firebaseUser.uid)
+            .then(rsp => {
+              localStorage.setItem("userId", firebaseUser.uid);
+              localStorage.setItem("firstName", rsp.val().firstName);
+              localStorage.setItem("lastName", rsp.val().lastName);
+            })
+            .then(() => {
+              resolve(true);
             });
-        });
-    };
+        } else {
+          resolve(false);
+        }
+      });
+    });
+  };
+
+  getUserInfo = id => {
+    return firebaseProvider
+      .database()
+      .ref("users")
+      .child(id)
+      .once("value", snapshot => {
+        return snapshot;
+      });
+  };
+
+  logout = () => {
+    localStorage.removeItem("userId");
+    localStorage.removeItem("firstName");
+    localStorage.removeItem("lastName");
+    const auth = firebaseProvider.auth();
+    return auth.signOut();
+  };
 }
